@@ -1,0 +1,470 @@
+<<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Biblioteca Escolar | Login e Cadastro</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      background: linear-gradient(135deg, #102a43, #2563a6);
+    }
+
+    .container {
+      width: 100%;
+      max-width: 430px;
+      padding: 35px;
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 15px 45px rgba(0, 0, 0, 0.2);
+    }
+
+    .logo {
+      text-align: center;
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #163a5c;
+      font-size: 25px;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #64748b;
+      margin-bottom: 28px;
+      line-height: 1.5;
+    }
+
+    .role-button {
+      width: 100%;
+      padding: 15px;
+      margin-bottom: 12px;
+      border: 1px solid #dbe5ef;
+      border-radius: 10px;
+      background: #f8fafc;
+      color: #163a5c;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .role-button:hover {
+      background: #e7f1ff;
+      border-color: #2563a6;
+      transform: translateY(-1px);
+    }
+
+    .primary {
+      background: #1d5d91;
+      color: white;
+      border: none;
+      margin-top: 10px;
+    }
+
+    .primary:hover {
+      background: #15466f;
+    }
+
+    .primary:disabled {
+      background: #94a3b8;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .field {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 7px;
+      color: #334155;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .input-wrapper {
+      position: relative;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      padding-right: 40px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus {
+      border-color: #2563a6;
+      box-shadow: 0 0 0 3px rgba(37, 99, 166, 0.15);
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      color: #64748b;
+    }
+
+    .toggle-mode {
+      text-align: center;
+      margin-top: 12px;
+      font-size: 14px;
+      color: #2563a6;
+      cursor: pointer;
+      text-decoration: underline;
+      font-weight: bold;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .back {
+      width: 100%;
+      padding: 10px;
+      margin-top: 8px;
+      background: transparent;
+      color: #475569;
+      border: none;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .back:hover {
+      color: #0f172a;
+    }
+
+    #message {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      line-height: 1.5;
+      display: none;
+    }
+
+    #message.error {
+      display: block;
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fca5a5;
+    }
+
+    #message.success {
+      display: block;
+      background: #dcfce7;
+      color: #166534;
+      border: 1px solid #86efac;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 12px;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="container">
+    <div class="logo">📚</div>
+
+    <h1 id="main-title">Biblioteca Escolar</h1>
+    <p class="subtitle" id="subtitle">
+      Bem-vindo! Selecione seu tipo de acesso.
+    </p>
+
+    <section id="role-selection">
+      <button class="role-button" onclick="showForm('admin')">
+        🛡️ Entrar como Administrador
+      </button>
+
+      <button class="role-button" onclick="showForm('aluno')">
+        🎓 Entrar como Aluno
+      </button>
+
+      <button class="role-button" onclick="showForm('professor')">
+        👨‍🏫 Entrar como Professor
+      </button>
+    </section>
+
+    <form id="auth-form" class="hidden">
+      <div class="field">
+        <label for="nome">Nome do Usuário</label>
+        <div class="input-wrapper">
+          <input id="nome" name="nome" type="text" autocomplete="username" placeholder="Digite seu nome completo">
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="senha">Senha</label>
+        <div class="input-wrapper">
+          <input id="senha" name="senha" type="password" autocomplete="current-password" placeholder="Digite sua senha">
+          <button type="button" class="toggle-password" onclick="togglePasswordVisibility()" aria-label="Mostrar ou ocultar senha">👁️</button>
+        </div>
+      </div>
+
+      <div class="field hidden" id="cgm-field">
+        <label for="cgm">CGM (Código Geral de Matrícula)</label>
+        <div class="input-wrapper">
+          <input id="cgm" name="cgm" type="text" autocomplete="off" placeholder="Ex: 12345678">
+        </div>
+      </div>
+
+      <div class="field hidden" id="email-field">
+        <label for="email">E-mail Institucional</label>
+        <div class="input-wrapper">
+          <input id="email" name="email" type="email" autocomplete="email" placeholder="professor@escola.edu.br">
+        </div>
+      </div>
+
+      <button class="role-button primary" type="submit" id="submit-button">
+        Entrar
+      </button>
+
+      <div id="toggle-mode-btn" class="toggle-mode hidden" onclick="toggleAuthMode()">
+        Não tem conta? Cadastre-se
+      </div>
+
+      <button class="back" type="button" onclick="backToRoles()">
+        ← Voltar para seleção de perfil
+      </button>
+    </form>
+
+    <div id="message" role="status" aria-live="polite"></div>
+
+    <div class="footer">
+      Sistema de Gestão de Biblioteca Escolar © 2026
+    </div>
+  </main>
+
+  <script>
+    const SUPABASE_URL = "https://jkpppkcsgichhdrsudxa.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_U7nI3OzqZ-Trp0v0EkEscA_p17vVbPU";
+
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const CONFIG = {
+      admin: { table: "adm", role: "Administrador", redirectUrl: "adm.html" },
+      aluno: { table: "alunos", role: "Alunos", redirectUrl: "alunos.html" },
+      professor: { table: "professores", role: "Professor", redirectUrl: "professor.html" }
+    };
+
+    let selectedRole = null;
+    let isRegistering = false;
+
+    const selection = document.getElementById("role-selection");
+    const form = document.getElementById("auth-form");
+    const subtitle = document.getElementById("subtitle");
+    const message = document.getElementById("message");
+    const cgmField = document.getElementById("cgm-field");
+    const emailField = document.getElementById("email-field");
+    const submitButton = document.getElementById("submit-button");
+    const toggleModeBtn = document.getElementById("toggle-mode-btn");
+
+    function showMessage(text, type = "error") {
+      message.textContent = text;
+      message.className = type;
+    }
+
+    function clearMessage() {
+      message.textContent = "";
+      message.className = "";
+    }
+
+    function togglePasswordVisibility() {
+      const senhaInput = document.getElementById("senha");
+      senhaInput.type = senhaInput.type === "password" ? "text" : "password";
+    }
+
+    function updateFormState() {
+      const titles = {
+        admin: isRegistering ? "Cadastro de Administrador" : "Acesso de Administrador",
+        aluno: isRegistering ? "Cadastro de alunos" : "Acesso de alunos",
+        professor: isRegistering ? "Cadastro de Professor" : "Acesso de Professor"
+      };
+
+      subtitle.textContent = titles[selectedRole];
+      submitButton.textContent = isRegistering ? "Cadastrar" : "Entrar";
+      toggleModeBtn.textContent = isRegistering ? "Já tem uma conta? Faça login" : "Não tem conta? Cadastre-se";
+
+      // Ocultar alternância de cadastro para Admin (se aplicável)
+      if (selectedRole === "admin") {
+        toggleModeBtn.classList.add("hidden");
+      } else {
+        toggleModeBtn.classList.remove("hidden");
+      }
+    }
+
+    function showForm(role) {
+      selectedRole = role;
+      isRegistering = false;
+      clearMessage();
+
+      selection.classList.add("hidden");
+      form.classList.remove("hidden");
+
+      cgmField.classList.toggle("hidden", role !== "aluno");
+      emailField.classList.toggle("hidden", role !== "professor");
+
+      document.getElementById("cgm").required = (role === "aluno");
+      document.getElementById("email").required = (role === "professor");
+
+      updateFormState();
+      document.getElementById("nome").focus();
+    }
+
+    function toggleAuthMode() {
+      isRegistering = !isRegistering;
+      clearMessage();
+      updateFormState();
+    }
+
+    function backToRoles() {
+      form.classList.add("hidden");
+      selection.classList.remove("hidden");
+      form.reset();
+      selectedRole = null;
+      isRegistering = false;
+      clearMessage();
+      subtitle.textContent = "Bem-vindo! Selecione seu tipo de acesso.";
+    }
+
+    form.addEventListener("submit", async function(event) {
+      event.preventDefault();
+      clearMessage();
+
+      const nome = document.getElementById("nome").value.trim();
+      const senha = document.getElementById("senha").value;
+
+      if (!nome || !senha || !selectedRole) {
+        showMessage("Preencha todos os campos obrigatórios.");
+        return;
+      }
+
+      const config = CONFIG[selectedRole];
+      const payload = { nome, senha };
+
+      if (selectedRole === "aluno") {
+        payload.cgm = document.getElementById("cgm").value.trim();
+        if (!payload.cgm) {
+          showMessage("Informe seu CGM.");
+          return;
+        }
+      }
+
+      if (selectedRole === "professor") {
+        payload.email = document.getElementById("email").value.trim();
+        if (!payload.email) {
+          showMessage("Informe seu e-mail.");
+          return;
+        }
+      }
+
+      submitButton.disabled = true;
+      submitButton.textContent = isRegistering ? "Cadastrando..." : "Verificando...";
+
+      try {
+        if (isRegistering) {
+          // PROCESSO DE CADASTRO
+          const { error } = await supabaseClient
+            .from(config.table)
+            .insert([payload]);
+
+          if (error) {
+            console.error("Erro detalhado do Supabase:", error);
+            if (error.code === '23505') {
+              showMessage("Já existe um cadastro com esses dados.");
+            } else {
+              showMessage(`Erro ao cadastrar: ${error.message}`);
+            }
+            return;
+          }
+
+          showMessage("Cadastro realizado com sucesso! Você já pode entrar.", "success");
+          setTimeout(() => {
+            toggleAuthMode();
+          }, 1500);
+
+        } else {
+          // PROCESSO DE LOGIN
+          let query = supabaseClient
+            .from(config.table)
+            .select("*")
+            .eq("nome", payload.nome)
+            .eq("senha", payload.senha);
+
+          if (selectedRole === "aluno") query = query.eq("cgm", payload.cgm);
+          if (selectedRole === "professor") query = query.eq("email", payload.email);
+
+          const { data, error } = await query.limit(1).maybeSingle();
+
+          if (error) {
+            console.error("Erro no Supabase:", error);
+            showMessage("Erro ao consultar o banco. Verifique permissões RLS ou conexão.");
+            return;
+          }
+
+          if (!data) {
+            showMessage("Dados incorretos ou usuário não encontrado.");
+            return;
+          }
+
+          localStorage.setItem("userSession", JSON.stringify({
+            user: data,
+            role: selectedRole,
+            loginAt: new Date().toISOString()
+          }));
+
+          showMessage(`Login validado com sucesso! Redirecionando...`, "success");
+
+          setTimeout(() => {
+            window.location.href = config.redirectUrl;
+          }, 1000);
+        }
+
+      } catch (err) {
+        console.error("Erro inesperado:", err);
+        showMessage("Falha na conexão. Tente novamente.");
+      } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = isRegistering ? "Cadastrar" : "Entrar";
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,2 @@
+crie uma pagina em HTML de um site de cadastro de biblioteca escolar, ao entrar no site coloque três botões; entrar como adm (nome, senha), entrar como aluno (nome, senha, CGM), entrar como professor (nome, senha, email). 
+para fazer login com as informações especificas do usuario dito anteriormente, essa tela simples deve estar ligada a um banco de dados supabase, e deve validar o acesso via banco de dados, o banco dados já está criado, você só precisa criar agora a conexão com o supabase.

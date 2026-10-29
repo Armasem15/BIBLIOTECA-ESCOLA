@@ -1,0 +1,128 @@
+/* style-xp.css - Tema Windows XP (Luna Style) */
+
+@import url('https://fonts.googleapis.com/css2?family=Tahoma:wght@400;700&display=swap');
+
+:root {
+  --xp-blue-dark: #0053e1;
+  --xp-header-grad-top: #0058ee;
+  --xp-header-grad-bottom: #0339ab;
+  --xp-bg-dialog: #ece9d8;
+  --xp-border-blue: #002d96;
+  --xp-input-border: #7f9db9;
+}
+
+body {
+  font-family: 'Tahoma', sans-serif;
+  background: #008080; /* Azul petróleo clássico ou gradiente Bliss */
+  background: linear-gradient(135deg, #1e5799 0%, #2989d8 50%, #207cca 100%);
+  background-attachment: fixed;
+  margin: 0;
+  padding: 20px;
+  color: #000;
+}
+
+/* Containers e Cards Estilo Janela XP */
+.card, .container, fieldset {
+  background-color: var(--xp-bg-dialog);
+  border: 3px solid var(--xp-border-blue);
+  border-radius: 8px 8px 0 0;
+  box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.4);
+  margin-bottom: 20px;
+  padding: 15px;
+}
+
+/* Cabeçalhos / Barras de Título */
+h1, h2, h3, .title-bar {
+  background: linear-gradient(to bottom, var(--xp-header-grad-top) 0%, var(--xp-header-grad-bottom) 100%);
+  color: white;
+  font-weight: bold;
+  font-size: 13px;
+  padding: 6px 10px;
+  margin: -15px -15px 15px -15px;
+  border-radius: 4px 4px 0 0;
+  text-shadow: 1px 1px 1px #000;
+  letter-spacing: 0.5px;
+}
+
+/* Botões com efeito de relevo e foco em amarelo */
+button, .btn {
+  font-family: 'Tahoma', sans-serif;
+  font-size: 11px;
+  color: #000;
+  background: linear-gradient(to bottom, #ffffff 0%, #e3e3db 100%);
+  border: 1px solid #003c74;
+  border-radius: 3px;
+  padding: 4px 14px;
+  cursor: pointer;
+  box-shadow: inset 1px 1px 0px #fff, inset -1px -1px 0px #b5b5a6;
+}
+
+button:hover, .btn:hover {
+  background: linear-gradient(to bottom, #fff8dc 0%, #ffe48d 100%);
+  border-color: #e3a21a;
+}
+
+button:active, .btn:active {
+  background: linear-gradient(to bottom, #cdcdcd 0%, #e3e3db 100%);
+  box-shadow: inset 1px 1px 2px #707070;
+}
+
+/* Formulários e Entradas */
+input[type="text"], input[type="date"], select {
+  font-family: 'Tahoma', sans-serif;
+  font-size: 11px;
+  border: 2px inset var(--xp-input-border);
+  background-color: #fff;
+  padding: 3px 5px;
+  outline: none;
+}
+
+input:focus, select:focus {
+  background-color: #ffffe0; /* Efeito de destaque ao focar */
+}
+
+/* Tabelas tipo Detalhes do Windows Explorer */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #fff;
+  border: 1px solid #7f9db9;
+  font-size: 11px;
+}
+
+th {
+  background: linear-gradient(to bottom, #ffffff 0%, #ece9d8 100%);
+  border-right: 1px solid #d4d0c8;
+  border-bottom: 1px solid #7f9db9;
+  padding: 6px;
+  text-align: left;
+  font-weight: normal;
+  color: #000;
+}
+
+td {
+  padding: 5px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+tr:nth-child(even) {
+  background-color: #f7f7f7;
+}
+
+/* Tags de Status estilo ícone */
+.badge-ativo {
+  background-color: #2e8b57;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 2px;
+  font-size: 10px;
+  font-weight: bold;
+}
+
+.badge-devolvido {
+  background-color: #708090;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 2px;
+  font-size: 10px;
+}

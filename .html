@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel do Aluno | Biblioteca Escolar</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: #f1f5f9; min-height: 100vh; }
+    header { background: linear-gradient(135deg, #102a43, #2563a6); color: white; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; }
+    .user-info h2 { font-size: 20px; }
+    .user-info p { font-size: 14px; opacity: 0.8; }
+    .btn-logout { background: #ef4444; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    .btn-logout:hover { background: #dc2626; }
+    main { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+    .search-box { margin-bottom: 24px; display: flex; gap: 10px; }
+    .search-box input { flex: 1; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; }
+    .grid-livros { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+    .card-livro { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: space-between; border: 1px solid #e2e8f0; }
+    .card-livro h3 { color: #1e293b; font-size: 18px; margin-bottom: 6px; }
+    .card-livro .autor { color: #64748b; font-size: 14px; font-weight: bold; margin-bottom: 10px; }
+    .genero-tag { display: inline-block; background: #e0f2fe; color: #0369a1; font-size: 12px; font-weight: bold; padding: 4px 8px; border-radius: 6px; margin-bottom: 12px; width: fit-content; }
+    .sinopse { color: #334155; font-size: 14px; line-height: 1.5; margin-bottom: 16px; flex-grow: 1; }
+    .footer-card { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 12px; }
+    .qtd-badge { font-size: 13px; font-weight: bold; padding: 4px 8px; border-radius: 4px; }
+    .qtd-disponivel { background: #dcfce7; color: #166534; }
+    .qtd-indisponivel { background: #fee2e2; color: #991b1b; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="user-info">
+      <h2 id="user-name">🎓 Aluno</h2>
+      <p id="user-cgm">CGM: -</p>
+    </div>
+    <button class="btn-logout" onclick="logout()">Sair</button>
+  </header>
+
+  <main>
+    <h1 style="color: #0f172a; margin-bottom: 16px;">Acervo de Livros</h1>
+    
+    <div class="search-box">
+      <input type="text" id="input-busca" placeholder="Buscar por título, autor ou gênero..." oninput="filtrarLivros()">
+    </div>
+
+    <div id="grid-livros" class="grid-livros">
+      <p>Carregando livros...</p>
+    </div>
+  </main>
+
+  <script>
+    const SUPABASE_URL = "https://jkpppkcsgichhdrsudxa.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_U7nI3OzqZ-Trp0v0EkEscA_p17vVbPU";
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let todosOsLivros = [];
+
+    // Verificar Autenticação
+    const sessionData = JSON.parse(localStorage.getItem("userSession"));
+    if (!sessionData || sessionData.role !== "aluno") {
+      alert("Acesso não autorizado.");
+      window.location.href = "index.html";
+    } else {
+      document.getElementById("user-name").textContent = `🎓 ${sessionData.user.nome}`;
+      document.getElementById("user-cgm").textContent = `CGM: ${sessionData.user.cgm}`;
+    }
+
+    async function carregarLivros() {
+      const { data, error } = await supabaseClient.from("livros").select("*").order("titulo");
+
+      if (error) {
+        console.error("Erro ao buscar livros:", error);
+        document.getElementById("grid-livros").innerHTML = "<p>Erro ao carregar o acervo.</p>";
+        return;
+      }
+
+      todosOsLivros = data;
+      renderizarLivros(todosOsLivros);
+    }
+
+    function renderizarLivros(livros) {
+      const container = document.getElementById("grid-livros");
+      if (livros.length === 0) {
+        container.innerHTML = "<p>Nenhum livro encontrado.</p>";
+        return;
+      }
+
+      container.innerHTML = livros.map(livro => `
+        <div class="card-livro">
+          <div>
+            <h3>${livro.titulo}</h3>
+            <div class="autor">Por: ${livro.autor}</div>
+            <span class="genero-tag">${livro.genero}</span>
+            <p class="sinopse">${livro.sinopse || 'Sem sinopse disponível.'}</p>
+          </div>
+          <div class="footer-card">
+            <span class="qtd-badge ${livro.quantidade > 0 ? 'qtd-disponivel' : 'qtd-indisponivel'}">
+              ${livro.quantidade > 0 ? `${livro.quantidade} disponível(is)` : 'Indisponível'}
+            </span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function filtrarLivros() {
+      const termo = document.getElementById("input-busca").value.toLowerCase();
+      const filtrados = todosOsLivros.filter(l => 
+        l.titulo.toLowerCase().includes(termo) ||
+        l.autor.toLowerCase().includes(termo) ||
+        l.genero.toLowerCase().includes(termo)
+      );
+      renderizarLivros(filtrados);
+    }
+
+    function logout() {
+      localStorage.removeItem("userSession");
+      window.location.href = "index.html";
+    }
+
+    carregarLivros();
+  </script>
+</body>
+</html>

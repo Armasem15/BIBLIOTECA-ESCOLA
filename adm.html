@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel do Administrador | Biblioteca Escolar</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    <link rel="stylesheet" href="style.css">
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: #f1f5f9; min-height: 100vh; padding-bottom: 40px; }
+    
+    header { background: linear-gradient(135deg, #0f172a, #102a43); color: white; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; }
+    .user-info h2 { font-size: 20px; }
+    .user-info p { font-size: 14px; opacity: 0.8; }
+    .btn-logout { background: #ef4444; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    .btn-logout:hover { background: #dc2626; }
+    
+    main { max-width: 1200px; margin: 30px auto; padding: 0 20px; display: flex; flex-direction: column; gap: 30px; }
+    
+    .grid-forms { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 850px) { .grid-forms { grid-template-columns: 1fr; } }
+
+    /* Estilos de Caixas e Formulários */
+    .card-panel { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+    .card-panel h2 { color: #163a5c; font-size: 20px; margin-bottom: 16px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
+    
+    .field { margin-bottom: 14px; }
+    label { display: block; font-size: 13px; font-weight: bold; color: #334155; margin-bottom: 5px; }
+    input, select, textarea { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; outline: none; background-color: #fff; }
+    input:focus, select:focus, textarea:focus { border-color: #2563a6; }
+    
+    .btn-action { width: 100%; background: #1d5d91; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: background 0.2s; }
+    .btn-action:hover { background: #15466f; }
+
+    /* Mensagens de feedback */
+    .msg-feedback { margin-top: 12px; padding: 10px; border-radius: 6px; font-size: 13px; display: none; }
+    .msg-feedback.success { display: block; background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+    .msg-feedback.error { display: block; background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+
+    /* Tabela de Empréstimos */
+    .table-responsive { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; text-align: left; font-size: 14px; }
+    th, td { padding: 12px; border-bottom: 1px solid #e2e8f0; }
+    th { background-color: #f8fafc; color: #475569; }
+    
+    .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; display: inline-block; }
+    .badge-ativo { background: #fef3c7; color: #92400e; }
+    .badge-devolvido { background: #dcfce7; color: #166534; }
+    
+    .btn-devolver { background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
+    .btn-devolver:hover { background: #059669; }
+
+    /* Grid do Acervo */
+    .search-box input { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; margin-bottom: 20px; }
+    .grid-livros { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
+    .card-livro { background: white; border-radius: 12px; padding: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: space-between; border: 1px solid #e2e8f0; }
+    .card-capa { width: 100%; height: 180px; object-fit: cover; border-radius: 8px; margin-bottom: 10px; background-color: #e2e8f0; }
+    .card-livro h3 { color: #1e293b; font-size: 16px; margin-bottom: 4px; }
+    .card-livro .autor { color: #64748b; font-size: 13px; font-weight: bold; margin-bottom: 6px; }
+    .genero-tag { display: inline-block; background: #f1f5f9; color: #475569; font-size: 11px; font-weight: bold; padding: 3px 6px; border-radius: 4px; margin-bottom: 10px; width: fit-content; }
+    .footer-card { border-top: 1px solid #f1f5f9; padding-top: 10px; display: flex; justify-content: space-between; align-items: center; }
+    .btn-delete { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; }
+    .btn-delete:hover { background: #ef4444; color: white; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="user-info">
+      <h2 id="user-name">🛡️ Administrador</h2>
+      <p>Gestão de Acervo e Empréstimos</p>
+    </div>
+    <button class="btn-logout" onclick="logout()">Sair</button>
+  </header>
+
+  <main>
+    <!-- Sessão Superior: Formulários de Cadastro e Empréstimo -->
+    <div class="grid-forms">
+      <!-- Form 1: Cadastrar Livro -->
+      <section class="card-panel">
+        <h2>📚 Cadastrar Novo Livro</h2>
+        <form id="add-book-form">
+          <div class="field">
+            <label for="titulo">Título *</label>
+            <input type="text" id="titulo" required placeholder="Ex: O Cortiço">
+          </div>
+          <div class="field">
+            <label for="autor">Autor *</label>
+            <input type="text" id="autor" required placeholder="Ex: Aluísio Azevedo">
+          </div>
+          <div class="field">
+            <label for="genero">Gênero *</label>
+            <input type="text" id="genero" required placeholder="Ex: Naturalismo">
+          </div>
+          <div class="field">
+            <label for="quantidade">Estoque Inicial *</label>
+            <input type="number" id="quantidade" min="1" value="1" required>
+          </div>
+          <div class="field">
+            <label for="capa_url">URL da Capa</label>
+            <input type="url" id="capa_url" placeholder="https://imagem.com/capa.jpg">
+          </div>
+          <div class="field">
+            <label for="sinopse">Sinopse</label>
+            <textarea id="sinopse" rows="2" placeholder="Resumo do livro..."></textarea>
+          </div>
+          <button type="submit" class="btn-action" id="btn-salvar-livro">Salvar Livro</button>
+        </form>
+        <div id="msg-livro" class="msg-feedback"></div>
+      </section>
+
+      <!-- Form 2: Realizar Empréstimo -->
+      <section class="card-panel">
+        <h2>🔄 Realizar Empréstimo</h2>
+        <form id="loan-form">
+          <div class="field">
+            <label for="select-tipo-usuario">Tipo de Usuário *</label>
+            <select id="select-tipo-usuario" onchange="carregarUsuariosPorTipo()" required>
+              <option value="aluno">Aluno</option>
+              <option value="professor">Professor</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="select-usuario">Selecione o Usuário *</label>
+            <select id="select-usuario" required>
+              <option value="">Carregando usuários...</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="select-livro">Selecione o Livro *</label>
+            <select id="select-livro" required>
+              <option value="">Carregando livros...</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="data-devolucao">Data Prevista para Devolução *</label>
+            <input type="date" id="data-devolucao" required>
+          </div>
+          <button type="submit" class="btn-action" id="btn-realizar-emprestimo">Registrar Empréstimo</button>
+        </form>
+        <div id="msg-emprestimo" class="msg-feedback"></div>
+      </section>
+    </div>
+
+    <!-- Tabela de Empréstimos Ativos e Histórico -->
+    <section class="card-panel">
+      <h2>📋 Status dos Empréstimos no Banco de Dados</h2>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Livro</th>
+              <th>Solicitante</th>
+              <th>Perfil</th>
+              <th>Data Empréstimo</th>
+              <th>Devolução Prevista</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="lista-emprestimos">
+            <tr><td colspan="7">Carregando empréstimos...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Visualização e Busca de Acervo -->
+    <section class="card-panel">
+      <h2>🔍 Acervo de Livros Cadastrados</h2>
+      <div class="search-box">
+        <input type="text" id="input-busca" placeholder="Pesquisar por título, autor ou gênero..." oninput="filtrarLivros()">
+      </div>
+      <div id="grid-livros" class="grid-livros">
+        <p>Carregando acervo...</p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const SUPABASE_URL = "https://jkpppkcsgichhdrsudxa.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_U7nI3OzqZ-Trp0v0EkEscA_p17vVbPU";
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let todosOsLivros = [];
+    let listaAlunos = [];
+    let listaProfessores = [];
+
+    // 1. Verificação de Autenticação do Administrador
+    const sessionRaw = localStorage.getItem("userSession");
+    if (!sessionRaw) {
+      alert("Sessão expirada. Faça login novamente.");
+      window.location.href = "index.html";
+    } else {
+      const sessionData = JSON.parse(sessionRaw);
+      if ((sessionData.role ? sessionData.role.toLowerCase() : "") !== "admin") {
+        alert("Acesso restrito apenas a Administradores.");
+        window.location.href = "index.html";
+      } else {
+        document.getElementById("user-name").textContent = `🛡️ ${sessionData.user.nome || 'Administrador'}`;
+      }
+    }
+
+    // Define data de devolução padrão para daqui a 14 dias
+    const dataPadrao = new Date();
+    dataPadrao.setDate(dataPadrao.getDate() + 14);
+    document.getElementById("data-devolucao").value = dataPadrao.toISOString().split('T')[0];
+
+    // 2. Carregar Livros
+    async function carregarLivros() {
+      const { data, error } = await supabaseClient.from("livros").select("*").order("titulo");
+
+      if (error) {
+        console.error("Erro ao buscar livros:", error);
+        return;
+      }
+
+      todosOsLivros = data || [];
+      renderizarLivros(todosOsLivros);
+      atualizarSelectLivros(todosOsLivros);
+    }
+
+    function renderizarLivros(livros) {
+      const container = document.getElementById("grid-livros");
+      if (livros.length === 0) {
+        container.innerHTML = "<p>Nenhum livro encontrado.</p>";
+        return;
+      }
+
+      const placeholderCapa = "https://via.placeholder.com/300x400?text=Sem+Capa";
+
+      container.innerHTML = livros.map(l => `
+        <div class="card-livro">
+          <div>
+            <img src="${l.capa_url || placeholderCapa}" alt="Capa" class="card-capa" onerror="this.src='${placeholderCapa}'">
+            <h3>${l.titulo}</h3>
+            <div class="autor">Por: ${l.autor}</div>
+            <span class="genero-tag">${l.genero}</span>
+          </div>
+          <div class="footer-card">
+            <span><strong>Qtd:</strong> ${l.quantidade}</span>
+            <button class="btn-delete" onclick="removerLivro('${l.id}', '${l.titulo}')">Excluir</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function atualizarSelectLivros(livros) {
+      const select = document.getElementById("select-livro");
+      const disponiveis = livros.filter(l => parseInt(l.quantidade || 0) > 0);
+      
+      select.innerHTML = disponiveis.length === 0 
+        ? '<option value="">Nenhum livro disponível em estoque</option>'
+        : '<option value="">Selecione um livro...</option>' + disponiveis.map(l => `<option value="${l.id}">${l.titulo} (Disponível: ${l.quantidade})</option>`).join("");
+    }
+
+    // 3. Carregar Usuários (Alunos e Professores)
+    async function carregarUsuarios() {
+      const { data: alunos } = await supabaseClient.from("alunos").select("id, nome, cgm").order("nome");
+      const { data: professores } = await supabaseClient.from("professores").select("id, nome, email").order("nome");
+
+      listaAlunos = alunos || [];
+      listaProfessores = professores || [];
+      carregarUsuariosPorTipo();
+    }
+
+    function carregarUsuariosPorTipo() {
+      const tipo = document.getElementById("select-tipo-usuario").value;
+      const select = document.getElementById("select-usuario");
+
+      if (tipo === "aluno") {
+        select.innerHTML = listaAlunos.length === 0
+          ? '<option value="">Nenhum aluno cadastrado</option>'
+          : '<option value="">Selecione o aluno...</option>' + listaAlunos.map(a => `<option value="${a.id}">${a.nome} (CGM: ${a.cgm})</option>`).join("");
+      } else {
+        select.innerHTML = listaProfessores.length === 0
+          ? '<option value="">Nenhum professor cadastrado</option>'
+          : '<option value="">Selecione o professor...</option>' + listaProfessores.map(p => `<option value="${p.id}">${p.nome} (${p.email})</option>`).join("");
+      }
+    }
+
+    // 4. Cadastrar Novo Livro
+    document.getElementById("add-book-form").addEventListener("submit", async function(e) {
+      e.preventDefault();
+      const msg = document.getElementById("msg-livro");
+      const btn = document.getElementById("btn-salvar-livro");
+
+      const payload = {
+        titulo: document.getElementById("titulo").value.trim(),
+        autor: document.getElementById("autor").value.trim(),
+        genero: document.getElementById("genero").value.trim(),
+        quantidade: parseInt(document.getElementById("quantidade").value),
+        capa_url: document.getElementById("capa_url").value.trim() || null,
+        sinopse: document.getElementById("sinopse").value.trim() || null
+      };
+
+      btn.disabled = true;
+      const { error } = await supabaseClient.from("livros").insert([payload]);
+
+      if (error) {
+        msg.textContent = `Erro: ${error.message}`;
+        msg.className = "msg-feedback error";
+      } else {
+        msg.textContent = "Livro cadastrado com sucesso!";
+        msg.className = "msg-feedback success";
+        document.getElementById("add-book-form").reset();
+        await carregarLivros();
+      }
+      btn.disabled = false;
+    });
+
+    // 5. Registrar Empréstimo
+    document.getElementById("loan-form").addEventListener("submit", async function(e) {
+      e.preventDefault();
+      const msg = document.getElementById("msg-emprestimo");
+      const btn = document.getElementById("btn-realizar-emprestimo");
+
+      const tipoUsuario = document.getElementById("select-tipo-usuario").value;
+      const usuarioId = document.getElementById("select-usuario").value;
+      const livroId = document.getElementById("select-livro").value;
+      const dataDevolucao = document.getElementById("data-devolucao").value;
+
+      if (!usuarioId || !livroId) {
+        msg.textContent = "Selecione o usuário e o livro.";
+        msg.className = "msg-feedback error";
+        return;
+      }
+
+      btn.disabled = true;
+
+      // Busca o livro garantindo comparação correta de texto e número
+      const livroAtual = todosOsLivros.find(l => String(l.id) === String(livroId));
+      const quantidadeDisponivel = parseInt(livroAtual?.quantidade || 0);
+
+      if (!livroAtual || quantidadeDisponivel <= 0) {
+        msg.textContent = "Livro sem estoque disponível.";
+        msg.className = "msg-feedback error";
+        btn.disabled = false;
+        return;
+      }
+
+      const payload = {
+        livro_id: livroId,
+        tipo_usuario: tipoUsuario,
+        aluno_id: tipoUsuario === "aluno" ? usuarioId : null,
+        professor_id: tipoUsuario === "professor" ? usuarioId : null,
+        data_devolucao_prevista: dataDevolucao,
+        status: "ativo"
+      };
+
+      const { error: errorEmprestimo } = await supabaseClient.from("emprestimos").insert([payload]);
+
+      if (errorEmprestimo) {
+        msg.textContent = `Erro ao salvar empréstimo: ${errorEmprestimo.message}`;
+        msg.className = "msg-feedback error";
+      } else {
+        // Reduz estoque do livro
+        await supabaseClient.from("livros").update({ quantidade: quantidadeDisponivel - 1 }).eq("id", livroId);
+
+        msg.textContent = "Empréstimo registrado com sucesso!";
+        msg.className = "msg-feedback success";
+        
+        await carregarLivros();
+        await carregarEmprestimos();
+      }
+
+      btn.disabled = false;
+    });
+
+    // 6. Carregar Lista e Status de Empréstimos
+  async function carregarEmprestimos() {
+  const container = document.getElementById("lista-emprestimos");
+
+  const { data, error } = await supabaseClient
+    .from("emprestimos")
+    .select(`
+      id,
+      livro_id,
+      tipo_usuario,
+      data_emprestimo,
+      data_devolucao_prevista,
+      status,
+      livros!emprestimos_livro_id_fkey (titulo),
+      alunos!emprestimos_aluno_id_fkey (nome),
+      professores!emprestimos_professor_id_fkey (nome)
+    `)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Erro detalhado do Supabase:", error);
+    container.innerHTML = `<tr><td colspan='7' style='color: red;'>Erro ao carregar: ${error.message}</td></tr>`;
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    container.innerHTML = "<tr><td colspan='7'>Nenhum empréstimo registrado.</td></tr>";
+    return;
+  }
+
+  container.innerHTML = data.map(item => {
+    const nomeLivro = item.livros ? item.livros.titulo : 'Livro não localizado';
+    const nomeUsuario = item.tipo_usuario === 'aluno' 
+      ? (item.alunos ? item.alunos.nome : 'Aluno não localizado')
+      : (item.professores ? item.professores.nome : 'Professor não localizado');
+
+    const statusFormatado = item.status ? item.status.toLowerCase() : 'ativo';
+    const badgeClass = statusFormatado === 'ativo' ? 'badge-ativo' : 'badge-devolvido';
+    const acaoDevolver = statusFormatado === 'ativo' 
+      ? `<button class="btn-devolver" onclick="devolverLivro('${item.id}', '${item.livro_id}')">Marcar Devolução</button>` 
+      : 'Concluído';
+
+    return `
+      <tr>
+        <td><strong>${nomeLivro}</strong></td>
+        <td>${nomeUsuario}</td>
+        <td style="text-transform: capitalize;">${item.tipo_usuario || '-'}</td>
+        <td>${item.data_emprestimo || '-'}</td>
+        <td>${item.data_devolucao_prevista || '-'}</td>
+        <td><span class="badge ${badgeClass}">${statusFormatado.toUpperCase()}</span></td>
+        <td>${acaoDevolver}</td>
+      </tr>
+    `;
+  }).join("");
+}
+
+    // 7. Devolver Livro
+    async function devolverLivro(emprestimoId, livroId) {
+      if (!confirm("Confirmar a devolução deste livro?")) return;
+
+      const { error } = await supabaseClient
+        .from("emprestimos")
+        .update({ status: "devolvido" })
+        .eq("id", emprestimoId);
+
+      if (error) {
+        alert(`Erro ao devolver: ${error.message}`);
+        return;
+      }
+
+      const { data: livro } = await supabaseClient.from("livros").select("quantidade").eq("id", livroId).single();
+      if (livro) {
+        const quantidadeAtual = parseInt(livro.quantidade || 0);
+        await supabaseClient.from("livros").update({ quantidade: quantidadeAtual + 1 }).eq("id", livroId);
+      }
+
+      await carregarLivros();
+      await carregarEmprestimos();
+    }
+
+    // 8. Remover Livro do Acervo
+    async function removerLivro(id, titulo) {
+      if (confirm(`Deseja excluir o livro "${titulo}" do acervo?`)) {
+        const { error } = await supabaseClient.from("livros").delete().eq("id", id);
+        if (error) {
+          alert(`Erro ao remover: ${error.message}`);
+        } else {
+          await carregarLivros();
+        }
+      }
+    }
+
+    // 9. Pesquisar Livros
+    function filtrarLivros() {
+      const termo = document.getElementById("input-busca").value.toLowerCase();
+      const filtrados = todosOsLivros.filter(l => 
+        l.titulo.toLowerCase().includes(termo) ||
+        l.autor.toLowerCase().includes(termo) ||
+        l.genero.toLowerCase().includes(termo)
+      );
+      renderizarLivros(filtrados);
+    }
+
+    // 10. Logout
+    function logout() {
+      localStorage.removeItem("userSession");
+      window.location.href = "index.html";
+    }
+
+    // Inicialização
+    carregarLivros();
+    carregarUsuarios();
+    carregarEmprestimos();
+  </script>
+</body>
+</html>
